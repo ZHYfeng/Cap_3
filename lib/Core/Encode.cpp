@@ -101,27 +101,27 @@ bool Encode::verify() {
 	cerr << "\nVerifying this trace......\n";
 #if FORMULA_DEBUG
 	stringstream ss;
-	ss << "./output_info/" << "Trace" << trace->Id << ".z3expr" ;
+	ss << "./output_info/" << "Trace" << trace->Id << ".z3expr";
 	std::ofstream out_file(ss.str().c_str(),std::ios_base::out);
 	out_file <<"\n"<<z3_solver<<"\n";
 	out_file <<"\nifFormula\n";
 	for (unsigned i = 0; i < ifFormula.size(); i++) {
 		out_file << "Trace" << trace->Id << "#"
-				<< ifFormula[i].first->inst->info->file << "#"
-				<< ifFormula[i].first->inst->info->line << "#"
-				<< ifFormula[i].first->eventName << "#"
-				<< ifFormula[i].first->condition << "-"
-				<< !(ifFormula[i].first->condition) << "\n";
+		<< ifFormula[i].first->inst->info->file << "#"
+		<< ifFormula[i].first->inst->info->line << "#"
+		<< ifFormula[i].first->eventName << "#"
+		<< ifFormula[i].first->condition << "-"
+		<< !(ifFormula[i].first->condition) << "\n";
 		out_file << ifFormula[i].second << "\n";
 	}
 	out_file <<"\nassertFormula\n";
 	for (unsigned i = 0; i < assertFormula.size(); i++) {
 		out_file << "Trace" << trace->Id << "#"
-				<< assertFormula[i].first->inst->info->file << "#"
-				<< assertFormula[i].first->inst->info->line << "#"
-				<< assertFormula[i].first->eventName << "#"
-				<< assertFormula[i].first->condition << "-"
-				<< !(assertFormula[i].first->condition) << "\n";
+		<< assertFormula[i].first->inst->info->file << "#"
+		<< assertFormula[i].first->inst->info->line << "#"
+		<< assertFormula[i].first->eventName << "#"
+		<< assertFormula[i].first->condition << "-"
+		<< !(assertFormula[i].first->condition) << "\n";
 		out_file << assertFormula[i].second << "\n";
 	}
 	out_file.close();
@@ -132,18 +132,18 @@ bool Encode::verify() {
 #if BRANCH_INFO
 		stringstream ss;
 		ss << "Trace" << trace->Id << "#"
+
 //				<< assertFormula[i].first->inst->info->file << "#"
 				<< assertFormula[i].first->inst->info->line << "#"
-				<< assertFormula[i].first->eventName << "#"
-				<< assertFormula[i].first->condition << "-"
-				<< !(assertFormula[i].first->condition) << "assert_bug";
-		cerr << "Verifying assert " << i+1 << " @" << ss.str() << ": ";
+				<< assertFormula[i].first->eventName << "#" << assertFormula[i].first->condition
+				<< "-" << !(assertFormula[i].first->condition) << "assert_bug";
+		cerr << "Verifying assert " << i + 1 << " @" << ss.str() << ": ";
 #endif
 		z3_solver.push();	//backtrack point 2
 //		buildAllFormula();
 
-			Event* curr = assertFormula[i].first;
-
+		Event* curr = assertFormula[i].first;
+		cerr << "assertFormula\n" << assertFormula[i].second << "\n";
 		z3_solver.add(!assertFormula[i].second);
 		for (unsigned j = 0; j < assertFormula.size(); j++) {
 			if (j == i) {
@@ -166,15 +166,18 @@ bool Encode::verify() {
 			expr tempIf = z3_ctx.int_const(temp->eventName.c_str());
 			expr constraint = z3_ctx.bool_val(1);
 			if (curr->threadId == temp->threadId) {
-				if (curr->eventId > temp->eventId)
+				if (curr->eventId >= temp->eventId)
 					constraint = ifFormula[j].second;
-			} else
-				constraint = implies(tempIf < currIf, ifFormula[j].second);
+			} else {
+//				if (curr->eventId > temp->eventId) {
+					constraint = implies(tempIf < currIf, ifFormula[j].second);
+//				}
+			}
 			z3_solver.add(constraint);
 		}
 		formulaNum = formulaNum + ifFormula.size() - 1;
 		//statics
-		cerr <<"\n"<<z3_solver<<"\n";
+		cerr << "\n" << z3_solver << "\n";
 		check_result result = z3_solver.check();
 
 		solvingTimes++;
@@ -188,13 +191,11 @@ bool Encode::verify() {
 			if (true) {
 				vector<Event*> vecEvent;
 				computePrefix(vecEvent, assertFormula[i].first);
-				Prefix* prefix = new Prefix(vecEvent, trace->createThreadPoint,
-						ss.str());
+				Prefix* prefix = new Prefix(vecEvent, trace->createThreadPoint, ss.str());
 				output << "./output_info/" << prefix->getName() << ".z3expr";
 				runtimeData->addScheduleSet(prefix);
 //			} else {
-				cerr << "Assert Failure at "
-						<< assertFormula[i].first->inst->info->file << ": "
+				cerr << "Assert Failure at " << assertFormula[i].first->inst->info->file << ": "
 						<< assertFormula[i].first->inst->info->line << "\n";
 #if FORMULA_DEBUG
 				showPrefixInfo(prefix, assertFormula[i].first);
@@ -202,13 +203,13 @@ bool Encode::verify() {
 
 			}
 #if FORMULA_DEBUG
-		std::ofstream out_file(output.str().c_str(),std::ios_base::out|std::ios_base::app);
-		out_file << "!assertFormula[i].second : " << !assertFormula[i].second << "\n";
-		out_file <<"\n"<<z3_solver<<"\n";
-		model m = z3_solver.get_model();
-		out_file <<"\nz3_solver.get_model()\n";
-		out_file <<"\n"<<m<<"\n";
-		out_file.close();
+			std::ofstream out_file(output.str().c_str(),std::ios_base::out|std::ios_base::app);
+			out_file << "!assertFormula[i].second : " << !assertFormula[i].second << "\n";
+			out_file <<"\n"<<z3_solver<<"\n";
+			model m = z3_solver.get_model();
+			out_file <<"\nz3_solver.get_model()\n";
+			out_file <<"\n"<<m<<"\n";
+			out_file.close();
 #endif
 //		logStatisticInfo();
 			return false;
@@ -237,10 +238,8 @@ void Encode::check_if() {
 		stringstream ss;
 		ss << "Trace" << trace->Id << "#"
 //				<< ifFormula[i].first->inst->info->file << "#"
-				<< ifFormula[i].first->inst->info->line << "#"
-				<< ifFormula[i].first->eventName << "#"
-				<< ifFormula[i].first->condition << "-"
-				<< !(ifFormula[i].first->condition);
+				<< ifFormula[i].first->inst->info->line << "#" << ifFormula[i].first->eventName
+				<< "#" << ifFormula[i].first->condition << "-" << !(ifFormula[i].first->condition);
 		cerr << "Verifying branch " << num << " @" << ss.str() << ": ";
 #endif
 
@@ -298,7 +297,7 @@ void Encode::check_if() {
 //			cerr << "CCCost : " << cost << "\n";
 		}
 
-		if(branch){
+		if (branch) {
 //			buildAllFormula();
 
 			Event* curr = ifFormula[i].first;
@@ -308,9 +307,9 @@ void Encode::check_if() {
 			std::vector<ref<klee::Expr> > &rwSymbolicExpr = trace->rwSymbolicExpr;
 			std::string varName;
 			unsigned int totalRwExpr = rwFormula.size();
-			for (unsigned int j = 0; j < totalRwExpr; j++){
+			for (unsigned int j = 0; j < totalRwExpr; j++) {
 				varName = filter.getVarName(rwSymbolicExpr[j]->getKid(1));
-				if (RelatedSymbolicExpr.find(varName) == RelatedSymbolicExpr.end()){
+				if (RelatedSymbolicExpr.find(varName) == RelatedSymbolicExpr.end()) {
 					Event* temp = rwFormula[j].first;
 					expr currIf = z3_ctx.int_const(curr->eventName.c_str());
 					expr tempIf = z3_ctx.int_const(temp->eventName.c_str());
@@ -365,8 +364,7 @@ void Encode::check_if() {
 			if (result == z3::sat) {
 				vector<Event*> vecEvent;
 				computePrefix(vecEvent, ifFormula[i].first);
-				Prefix* prefix = new Prefix(vecEvent, trace->createThreadPoint,
-						ss.str());
+				Prefix* prefix = new Prefix(vecEvent, trace->createThreadPoint, ss.str());
 				output << "./output_info/" << prefix->getName() << ".z3expr";
 				//printf prefix to DIR output_info
 				runtimeData->addScheduleSet(prefix);
