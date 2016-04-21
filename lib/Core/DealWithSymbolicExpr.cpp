@@ -10,7 +10,7 @@
 
 #define DEBUG 0
 
-#define OP1 1
+#define OP1 0
 //1为失效，0为生效
 
 #include "DealWithSymbolicExpr.h"

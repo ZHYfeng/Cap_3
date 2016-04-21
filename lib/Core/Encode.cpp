@@ -95,7 +95,7 @@ void Encode::buildAllFormula() {
 
 //true :: assert can't be violated. false :: assert can be violated.
 bool Encode::verify() {
-#if FORMULA_DEBUG
+#if !FORMULA_DEBUG
 	showInitTrace();
 #endif
 	cerr << "\nVerifying this trace......\n";
@@ -174,7 +174,7 @@ bool Encode::verify() {
 		}
 		formulaNum = formulaNum + ifFormula.size() - 1;
 		//statics
-
+		cerr <<"\n"<<z3_solver<<"\n";
 		check_result result = z3_solver.check();
 
 		solvingTimes++;
@@ -250,8 +250,8 @@ void Encode::check_if() {
 		struct timeval start, finish;
 		gettimeofday(&start, NULL);
 
-//		bool branch = filter.filterUselessWithSet(trace, trace->brRelatedSymbolicExpr[i]);
-		bool branch = true;
+		bool branch = filter.filterUselessWithSet(trace, trace->brRelatedSymbolicExpr[i]);
+//		bool branch = true;
 //		branch = true;
 		gettimeofday(&finish, NULL);
 		double cost = (double) (finish.tv_sec * 1000000UL + finish.tv_usec
@@ -303,28 +303,28 @@ void Encode::check_if() {
 
 			Event* curr = ifFormula[i].first;
 
-//			//添加读写的解
-//			std::set<std::string> &RelatedSymbolicExpr = trace->RelatedSymbolicExpr;
-//			std::vector<ref<klee::Expr> > &rwSymbolicExpr = trace->rwSymbolicExpr;
-//			std::string varName;
-//			unsigned int totalRwExpr = rwFormula.size();
-//			for (unsigned int j = 0; j < totalRwExpr; j++){
-//				varName = filter.getVarName(rwSymbolicExpr[j]->getKid(1));
-//				if (RelatedSymbolicExpr.find(varName) == RelatedSymbolicExpr.end()){
-//					Event* temp = rwFormula[j].first;
-//					expr currIf = z3_ctx.int_const(curr->eventName.c_str());
-//					expr tempIf = z3_ctx.int_const(temp->eventName.c_str());
-//					expr constraint = z3_ctx.bool_val(1);
-//					if (curr->threadId == temp->threadId) {
-//						if (curr->eventId > temp->eventId)
-//							constraint = rwFormula[j].second;
-//					} else {
-//						constraint = implies(tempIf < currIf, rwFormula[j].second);
-//					}
-//					z3_solver.add(constraint);
-////					z3_solver.add(rwFormula[j].second);
-//				}
-//			}
+			//添加读写的解
+			std::set<std::string> &RelatedSymbolicExpr = trace->RelatedSymbolicExpr;
+			std::vector<ref<klee::Expr> > &rwSymbolicExpr = trace->rwSymbolicExpr;
+			std::string varName;
+			unsigned int totalRwExpr = rwFormula.size();
+			for (unsigned int j = 0; j < totalRwExpr; j++){
+				varName = filter.getVarName(rwSymbolicExpr[j]->getKid(1));
+				if (RelatedSymbolicExpr.find(varName) == RelatedSymbolicExpr.end()){
+					Event* temp = rwFormula[j].first;
+					expr currIf = z3_ctx.int_const(curr->eventName.c_str());
+					expr tempIf = z3_ctx.int_const(temp->eventName.c_str());
+					expr constraint = z3_ctx.bool_val(1);
+					if (curr->threadId == temp->threadId) {
+						if (curr->eventId > temp->eventId)
+							constraint = rwFormula[j].second;
+					} else {
+						constraint = implies(tempIf < currIf, rwFormula[j].second);
+					}
+					z3_solver.add(constraint);
+//					z3_solver.add(rwFormula[j].second);
+				}
+			}
 
 			z3_solver.add(!ifFormula[i].second);
 			for (unsigned j = 0; j < ifFormula.size(); j++) {
