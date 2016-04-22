@@ -95,7 +95,7 @@ void Encode::buildAllFormula() {
 
 //true :: assert can't be violated. false :: assert can be violated.
 bool Encode::verify() {
-#if !FORMULA_DEBUG
+#if FORMULA_DEBUG
 	showInitTrace();
 #endif
 	cerr << "\nVerifying this trace......\n";
@@ -143,7 +143,7 @@ bool Encode::verify() {
 //		buildAllFormula();
 
 		Event* curr = assertFormula[i].first;
-		cerr << "assertFormula\n" << assertFormula[i].second << "\n";
+//		cerr << "assertFormula\n" << assertFormula[i].second << "\n";
 		z3_solver.add(!assertFormula[i].second);
 		for (unsigned j = 0; j < assertFormula.size(); j++) {
 			if (j == i) {
@@ -166,7 +166,7 @@ bool Encode::verify() {
 			expr tempIf = z3_ctx.int_const(temp->eventName.c_str());
 			expr constraint = z3_ctx.bool_val(1);
 			if (curr->threadId == temp->threadId) {
-				if (curr->eventId >= temp->eventId)
+				if (curr->eventId > temp->eventId)
 					constraint = ifFormula[j].second;
 			} else {
 //				if (curr->eventId > temp->eventId) {
@@ -177,7 +177,7 @@ bool Encode::verify() {
 		}
 		formulaNum = formulaNum + ifFormula.size() - 1;
 		//statics
-		cerr << "\n" << z3_solver << "\n";
+//		cerr << "\n" << z3_solver << "\n";
 		check_result result = z3_solver.check();
 
 		solvingTimes++;
