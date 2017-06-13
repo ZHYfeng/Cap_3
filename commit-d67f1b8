@@ -1,0 +1,47 @@
+From d67f1b8d9af8c0e5fb09b05da9b4424ed25abcf8 Mon Sep 17 00:00:00 2001
+From: unknown <haoyu.zz@foxmail.com>
+Date: Tue, 13 Jun 2017 10:52:03 +0800
+Subject: Revert "delete output"
+
+This reverts commit 47edf683acb9d7f3b38daefa1648c8026be6c5b2.
+
+diff --git a/lib/Core/Encode.cpp b/lib/Core/Encode.cpp
+index bde0340..2b0cc45 100644
+--- a/lib/Core/Encode.cpp
++++ b/lib/Core/Encode.cpp
+@@ -208,7 +208,7 @@ void Encode::buildAllFormula(unsigned eventIdPre) {
+ 
+ //true :: assert can't be violated. false :: assert can be violated.
+ bool Encode::verify() {
+-#if FORMULA_DEBUG
++#if !FORMULA_DEBUG
+ 	showInitTrace();
+ #endif
+ 	cerr << "\nVerifying this trace......\n";
+@@ -256,7 +256,7 @@ bool Encode::verify() {
+ //		buildAllFormula();
+ 
+ 		Event* curr = assertFormula[i].first;
+-//		cerr << "assertFormula\n" << assertFormula[i].second << "\n";
++		cerr << "assertFormula\n" << assertFormula[i].second << "\n";
+ 		z3_solver.add(!assertFormula[i].second);
+ 		for (unsigned j = 0; j < assertFormula.size(); j++) {
+ 			if (j == i) {
+@@ -279,7 +279,7 @@ bool Encode::verify() {
+ 			expr tempIf = z3_ctx.int_const(temp->eventName.c_str());
+ 			expr constraint = z3_ctx.bool_val(1);
+ 			if (curr->threadId == temp->threadId) {
+-				if (curr->eventId > temp->eventId)
++				if (curr->eventId >= temp->eventId)
+ 					constraint = ifFormula[j].second;
+ 			} else {
+ //				if (curr->eventId > temp->eventId) {
+@@ -290,7 +290,7 @@ bool Encode::verify() {
+ 		}
+ 		formulaNum = formulaNum + ifFormula.size() - 1;
+ 		//statics
+-//		cerr << "\n" << z3_solver << "\n";
++		cerr << "\n" << z3_solver << "\n";
+ 		check_result result = z3_solver.check();
+ 
+ 		solvingTimes++;
